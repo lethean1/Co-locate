@@ -68,7 +68,6 @@ def main():
         send_request(client_train[i], model_list[i][0], model_list[i][1], model_list[i][2])
 
 #    time.sleep(4)
-
     timestamp('client', 'after_connect')
     time_1 = time.time()
 

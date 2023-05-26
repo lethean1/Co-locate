@@ -25,13 +25,21 @@ def import_func(model, graph):
         loss = None
         print('before training')
         start = time.time()
-        for epoch in range(num_epochs):
-            model.train()
-            output = model(features, edge_index)
-            loss = F.nll_loss(output, labels)
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
+        with torch.profiler.profile(
+            activities = [torch.profiler.ProfilerActivity.CPU,
+                          torch.profiler.ProfilerActivity.CUDA],
+            schedule=torch.profiler.schedule(wait=2, warmup=2, active=6,repeat=1),
+            on_trace_ready=torch.profiler.tensorboard_trace_handler('./log'),
+            record_shapes=True
+        ) as prof:
+            for epoch in range(num_epochs):
+                model.train()
+                output = model(features, edge_index)
+                loss = F.nll_loss(output, labels)
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+                prof.step()
         print('time:{}'.format(time.time()-start))
         return loss.item()
 #print('time:{}'.format(time.time-start))
@@ -67,10 +75,10 @@ def import_task(data, num_layers):
     return model, func, shape_summary_list
 
 
-# def import_parameters(data, num_layers):
-#     model, graph = import_model(data, num_layers)
-#     group_list = partition_model(model)
-#     batch_list = [group_to_batch(group) for group in group_list]
-#     para_shape_list = [group_to_para_shape(group) for group in group_list]
-#     comp_total_bytes = get_comp_size(graph, para_shape_list)
-#     return batch_list, comp_total_bytes
+def import_parameters(data, num_layers):
+    model, graph = import_model(data, num_layers)
+    group_list = partition_model(model)
+    batch_list = [group_to_batch(group) for group in group_list]
+    para_shape_list = [group_to_para_shape(group) for group in group_list]
+    comp_total_bytes = get_comp_size(graph, para_shape_list)
+    return batch_list, comp_total_bytes

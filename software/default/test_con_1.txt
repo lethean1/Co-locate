@@ -1,0 +1,1 @@
+GIN_training amazon0601 30

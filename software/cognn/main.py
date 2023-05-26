@@ -23,19 +23,16 @@ def main():
                 continue
             model_list.append([line.split()[0], line.split()[1], line.split()[2]])
 
-    # Warm up CUDA and allocate shared cache
+    # Warm up CUDA
     torch.randn(1024, device='cuda')
-    torch.cuda.allocate_shared_cache()
 
     # Create workers
     worker_list = []
     for _ in range(num_workers):
         p_parent, p_child = mp.Pipe()
-        param_trans_parent, param_trans_child = mp.Pipe()
-        worker = WorkerProc(model_list, p_child, param_trans_child)
+        worker = WorkerProc(model_list, p_child)
         worker.start()
-        torch.cuda.send_shared_cache()
-        worker_list.append((p_parent, worker, param_trans_parent))
+        worker_list.append((p_parent, worker))
         timestamp('frontend', 'create_worker')
 
 
@@ -54,7 +51,6 @@ def main():
         timestamp('tcp', 'connected')
         t_tcp = FrontendTcpThd(requests_queue, agent)
         t_tcp.start()
-
     # Wait for end
     t_sch.join()
 
