@@ -1,2 +1,0 @@
-GIN_training amazon0601 10
-GAT_training TWITTER-Real-Graph-Partial 20
